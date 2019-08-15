@@ -1,11 +1,9 @@
-const initialIssues = [
-  {id: 1, status: "New", owner: "Ravan", effort: 6,
-   created: new Date("2019-07-27"), due: undefined,
-   title: "Error in console when clicking add."},
-  {id: 2, status: "Assigned", owner: "Eddie", effort: 14,
-   created: new Date("2019-07-27"), due: new Date("2019-08-10"),
-   title: "Missing bottom border on panel."}
-];
+const dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
+
+function jsonDateReviver(key, value) {
+  if (dateRegex.test(value)) return new Date(value);
+  return value;
+}
 
 
 class IssueFilter extends React.Component {
@@ -101,10 +99,23 @@ class IssueList extends React.Component {
     this.loadData();
   }
 
-  loadData() {
-    setTimeout(() => {
-      this.setState({issues: initialIssues});
-    }, 500);
+  async loadData() {
+    const query = `query {
+      issueList {
+        id title status owner 
+        created effort due
+      }
+    }`;
+
+    const response = await fetch('/graphql', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ query })
+    });
+
+    const body = await response.text();
+    const result = JSON.parse(body, jsonDateReviver);
+    this.setState({ issues: result.data.issueList });
   }
 
   createIssue(issue) {

@@ -1,5 +1,9 @@
 "use strict";
 
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -18,23 +22,12 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-var initialIssues = [{
-  id: 1,
-  status: "New",
-  owner: "Ravan",
-  effort: 6,
-  created: new Date("2019-07-27"),
-  due: undefined,
-  title: "Error in console when clicking add."
-}, {
-  id: 2,
-  status: "Assigned",
-  owner: "Eddie",
-  effort: 14,
-  created: new Date("2019-07-27"),
-  due: new Date("2019-08-10"),
-  title: "Missing bottom border on panel."
-}];
+var dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
+
+function jsonDateReviver(key, value) {
+  if (dateRegex.test(value)) return new Date(value);
+  return value;
+}
 
 var IssueFilter =
 /*#__PURE__*/
@@ -183,15 +176,53 @@ function (_React$Component5) {
     }
   }, {
     key: "loadData",
-    value: function loadData() {
-      var _this3 = this;
+    value: function () {
+      var _loadData = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee() {
+        var query, response, body, result;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                query = "query {\n      issueList {\n        id title status owner \n        created effort due\n      }\n    }";
+                _context.next = 3;
+                return fetch('/graphql', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    query: query
+                  })
+                });
 
-      setTimeout(function () {
-        _this3.setState({
-          issues: initialIssues
-        });
-      }, 500);
-    }
+              case 3:
+                response = _context.sent;
+                _context.next = 6;
+                return response.text();
+
+              case 6:
+                body = _context.sent;
+                result = JSON.parse(body, jsonDateReviver);
+                this.setState({
+                  issues: result.data.issueList
+                });
+
+              case 9:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function loadData() {
+        return _loadData.apply(this, arguments);
+      }
+
+      return loadData;
+    }()
   }, {
     key: "createIssue",
     value: function createIssue(issue) {
